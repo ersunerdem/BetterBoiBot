@@ -1,1 +1,2 @@
 git+https://github.com/Rapptz/discord.py
+gunicorn==20.1.0
