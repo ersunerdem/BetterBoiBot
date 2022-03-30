@@ -1,7 +1,7 @@
+import requests
 import os
 import discord
 import youtube_dl
-import requests
 from django.core.validators import URLValidator
 from bs4 import BeautifulSoup
 import urllib.request
