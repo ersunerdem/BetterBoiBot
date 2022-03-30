@@ -53,7 +53,7 @@ def check_queue(ctx, id):
                 with YoutubeDL(YDL_OPTIONS) as ydl:
                     info = ydl.extract_info(url, download=False)
                     formatted_URL = info['formats'][0]['url']
-                    voice.play(FFmpegPCMAudio(formatted_URL, **FFMPEG_OPTIONS))
+                    voice.play(discord.FFmpegPCMAudio(formatted_URL, **FFMPEG_OPTIONS))
                     voice.is_playing()
             except:
                 print('Error on check_queue()')
@@ -92,7 +92,7 @@ async def on_ready():
 async def poll_yesno(ctx, msg: str):
     try:
         embed=discord.Embed(title=f"{msg}", description="React to this message with ✅ for Yes, ❌ for No.",  color=0xd10a07)
-        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url) 
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar) 
         message = await ctx.channel.send(embed=embed)
         await message.add_reaction("✅")
         await message.add_reaction("❌")
@@ -107,7 +107,7 @@ async def poll_yesno(ctx, msg: str):
 async def poll(ctx, msg: str, desc:str, *opt: str):   
     try:
         embed=discord.Embed(title=f"{msg}", description=f"{desc}",  color=0xd10a07)
-        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url) 
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar) 
         reactions = ['👍', '👎']
         reactions_num = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣']
         if(len(opt) < 2 or len(opt) > 5):
@@ -147,7 +147,7 @@ async def votekick(ctx, user_to_kick: discord.Member):
             await ctx.send("A fair vote to kick requires at least 3 (non-bot) users in the channel. This function cannot be used right now!")
             return
         embed=discord.Embed(title=f"#VoteKick: Voting to kick user: {user_to_kick.name} for the following infraction: {msg}", description="React to this message with ✅ for Yes, ❌ for No.",  color=0xd10a07)
-        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url) 
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar) 
         message = await ctx.channel.send(embed=embed)
         await message.add_reaction("✅")
         await message.add_reaction("❌")
@@ -372,7 +372,7 @@ async def voteskip(ctx):
     try:
         true_member_count = len([m for m in ctx.guild.members if not m.bot])
         embed=discord.Embed(title=f"#VoteSkip: Voting to skip current media.", description="React to this message with ✅ for Yes, ❌ for No.",  color=0xd10a07)
-        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url) 
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar) 
         message = await ctx.channel.send(embed=embed)
         await message.add_reaction("✅")
         await message.add_reaction("❌")
