@@ -3,10 +3,6 @@ requests-oauthlib==1.0.0
 git+https://github.com/Rapptz/discord.py
 aiohttp==3.7.4.post0
 async-timeout==3.0.1
-idna==3.3
-multidict==5.2.0
-yarl==1.7.2
-typing-extensions==4.0.1
 discord.py>=1.7.3
 gunicorn==20.1.0
 gevent==21.12.0
