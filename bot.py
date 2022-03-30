@@ -271,7 +271,7 @@ async def play(ctx, *args):
             title = s.find("meta", itemprop="name")["content"]
             await ctx.send(f"#NowPlaying: Video {title}")
             print(f'Playing video: {title}')
-            voice.play(FFmpegPCMAudio(formatted_URL, **FFMPEG_OPTIONS), after=lambda x=None: check_queue(ctx, ctx.message.guild.id))
+            voice.play(discord.FFmpegPCMAudio(formatted_URL, **FFMPEG_OPTIONS), after=lambda x=None: check_queue(ctx, ctx.message.guild.id))
             voice.is_playing()
         else:
             await queue(ctx, video_url)
