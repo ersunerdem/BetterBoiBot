@@ -1,3 +1,11 @@
+#=================================================
+# BetterBoiBot.py
+#=================================================
+
+
+#=================================================
+# Absolutely DISGUSTING Number of Imports
+#=================================================
 import requests
 import os
 import discord
@@ -5,7 +13,6 @@ import youtube_dl
 from django.core.validators import URLValidator
 from bs4 import BeautifulSoup
 import urllib.request
-import re
 from dotenv import load_dotenv
 from discord.ext import commands
 from discord.ext.commands import has_permissions, CheckFailure, BadArgument
@@ -16,9 +23,11 @@ from youtube_dl import YoutubeDL
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 
-bot = commands.Bot(command_prefix='3b!')
+intents = discord.Intents().all()
+bot = commands.Bot(command_prefix='3b!', intents=intents)
 
 queues = {}
+voice_channels = {}
 
 validator = URLValidator()
 
@@ -31,16 +40,24 @@ def concat(*args):
 
 
 def check_queue(ctx, id):
-    if queues[id] != []:
-        voice = ctx.guild.voice_client
-        url = queues[id].pop(0)[0]
-        YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist':'True'}
-        FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
-        with YoutubeDL(YDL_OPTIONS) as ydl:
-            info = ydl.extract_info(url, download=False)
-        formatted_URL = info['formats'][0]['url']
-        voice.play(FFmpegPCMAudio(formatted_URL, **FFMPEG_OPTIONS))
-        voice.is_playing()
+    try:
+        if(queues[id] == None):
+            pass
+        elif len(queues[id]) > 0:
+            try:
+                voice = ctx.guild.voice_client
+                url = queues[id].pop(0)[0]
+                YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist':'True'}
+                FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
+                with YoutubeDL(YDL_OPTIONS) as ydl:
+                    info = ydl.extract_info(url, download=False)
+                    formatted_URL = info['formats'][0]['url']
+                    voice.play(FFmpegPCMAudio(formatted_URL, **FFMPEG_OPTIONS))
+                    voice.is_playing()
+            except:
+                print('Error on check_queue()')
+    except Exception as e:
+        print(e)
 
 #Returns a boolean
 def is_valid_url(ctx, msg):
@@ -64,142 +81,251 @@ def get_video(ctx, *args):
 # Bot Functions
 #=================================================
 
+#When the bot is first run, on_ready executes
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
 
+#Create a poll with 'yes' and 'no' reaction options for voting 
 @bot.command(name='poll_yesno', help='Create a poll with yes and no options for reply.')
 async def poll_yesno(ctx, msg: str):
-    embed=discord.Embed(title=f"{msg}", description="React to this message with ✅ for Yes, ❌ for No.",  color=0xd10a07)
-    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url) 
-    message = await ctx.channel.send(embed=embed)
-    await message.add_reaction("✅")
-    await message.add_reaction("❌")
+    try:
+        embed=discord.Embed(title=f"{msg}", description="React to this message with ✅ for Yes, ❌ for No.",  color=0xd10a07)
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url) 
+        message = await ctx.channel.send(embed=embed)
+        await message.add_reaction("✅")
+        await message.add_reaction("❌")
+    except Exception as e:
+        print(e)
+        await ctx.send(f"Error: {e}")
 
 
+#Create a generic poll with a number of options
 #TODO: Would like to have more flexibility in the number of options!
 @bot.command(name='poll', help='Create a poll with varied options for reply.')
 async def poll(ctx, msg: str, desc:str, *opt: str):   
-    embed=discord.Embed(title=f"{msg}", description=f"{desc}",  color=0xd10a07)
-    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url) 
-    reactions = ['👍', '👎']
-    reactions_num = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣']
-    if(len(opt) < 2 or len(opt) > 5):
-        await ctx.send("```Error! A poll must have between two to five options!```")
-        return
-    
-    description = []
-    if len(opt) == 2:
-        for x, option in enumerate(opt):
-            description += '\n {} {}'.format(reactions[x], option)
-    else:
-        for x, option in enumerate(opt):
-            description += '\n {} {}'.format(reactions_num[x], option)
-    
-        embed = discord.Embed(title = f"{msg}", description = ''.join(description))
-    react_message = await ctx.send(embed = embed)
+    try:
+        embed=discord.Embed(title=f"{msg}", description=f"{desc}",  color=0xd10a07)
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url) 
+        reactions = ['👍', '👎']
+        reactions_num = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣']
+        if(len(opt) < 2 or len(opt) > 5):
+            await ctx.send("```Error! A poll must have between two to five options!```")
+            return
+        
+        description = []
+        if len(opt) == 2:
+            for x, option in enumerate(opt):
+                description += '\n {} {}'.format(reactions[x], option)
+        else:
+            for x, option in enumerate(opt):
+                description += '\n {} {}'.format(reactions_num[x], option)
+        
+            embed = discord.Embed(title = f"{msg}", description = ''.join(description))
+        react_message = await ctx.send(embed = embed)
 
-    if len(opt) == 2:
-        for reaction in reactions:
-            await react_message.add_reaction(reaction)
-    else:
-        for reaction in reactions_num[:len(opt)]:
-            await react_message.add_reaction(reaction)
-    embed.set_footer(text='Poll ID: {}'.format(react_message.id))
+        if len(opt) == 2:
+            for reaction in reactions:
+                await react_message.add_reaction(reaction)
+        else:
+            for reaction in reactions_num[:len(opt)]:
+                await react_message.add_reaction(reaction)
+        embed.set_footer(text='Poll ID: {}'.format(react_message.id))
 
-    await self.bot.edit_message(react_message, embed=embed)
+        await bot.edit_message(react_message, embed=embed)
+    except Exception as e:
+        print(e)
+        await ctx.send(f"Error: {e}")
 
+#Vote to kick a member of the server
 @bot.command(name='votekick', help='Create a poll to democratically kick a user from the server.')
 async def votekick(ctx, user_to_kick: discord.Member):
-    true_member_count = len([m for m in ctx.guild.members if not m.bot])
-    if(true_member_count < 3):
-        await ctx.send("A fair vote to kick requires at least 3 (non-bot) users in the channel. This function cannot be used right now!")
-        return
-    embed=discord.Embed(title=f"#VoteKick: Voting to kick user: {user_to_kick.name} for the following infraction: {msg}", description="React to this message with ✅ for Yes, ❌ for No.",  color=0xd10a07)
-    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url) 
-    message = await ctx.channel.send(embed=embed)
-    await message.add_reaction("✅")
-    await message.add_reaction("❌")
+    try:
+        true_member_count = len([m for m in ctx.guild.members if not m.bot])
+        if(true_member_count < 3):
+            await ctx.send("A fair vote to kick requires at least 3 (non-bot) users in the channel. This function cannot be used right now!")
+            return
+        embed=discord.Embed(title=f"#VoteKick: Voting to kick user: {user_to_kick.name} for the following infraction: {msg}", description="React to this message with ✅ for Yes, ❌ for No.",  color=0xd10a07)
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url) 
+        message = await ctx.channel.send(embed=embed)
+        await message.add_reaction("✅")
+        await message.add_reaction("❌")
+    except Exception as e:
+        print(e)
+        await ctx.send(f"Error: {e}")
 
 
-#Function to kick a user
+#Kick users, but the user must have permission to kick
 @bot.command(pass_context=True, name='kick', help='Kick a user')
 @has_permissions(kick_members=True)
 async def kick(ctx, *, target: discord.Member):
-    if target.guild_permissions.administrator:
-        await ctx.send(f'{target.name} is an Administrator, and cannot be kicked!')
-    elif ctx.message.author == bot.user:
-        try:
-            await bot.kick(target)
-            await ctx.send(f'{target.name} has been kicked from the server!')
-        except Exception:
-            await ctx.send('Something went wrong with the kick!')
-    elif not ctx.message.author.guild_permissions.administrator:
-        await ctx.send(f'{ctx.message.author} is not an Administrator, and cannot kick anyone!')
-    else:
-        try:
-            await bot.kick(target)
-            await ctx.send(f'{target.name} has been kicked from the server!')
-        except Exception:
-            await ctx.send('Something went wrong with the kick!')
+    try:
+        if target.guild_permissions.administrator:
+            await ctx.send(f'{target.name} is an Administrator, and cannot be kicked!')
+        elif ctx.message.author == bot.user:
+            try:
+                await bot.kick(target)
+                await ctx.send(f'{target.name} has been kicked from the server!')
+            except Exception:
+                await ctx.send('Something went wrong with the kick!')
+        elif not ctx.message.author.guild_permissions.administrator:
+            await ctx.send(f'{ctx.message.author} is not an Administrator, and cannot kick anyone!')
+        else:
+            try:
+                await bot.kick(target)
+                await ctx.send(f'{target.name} has been kicked from the server!')
+            except Exception:
+                await ctx.send('Something went wrong with the kick!')
+    except Exception as e:
+        print(e)
+        await ctx.send(f"Error: {e}")
 
-
-
+#This function occurs whenever a reaction is added (used for polls)
 @bot.event
-async def on_reaction_add(ctx, reaction, user: discord.Member):
-    msg=reaction.message
-    true_member_count = len([m for m in ctx.guild.members if not m.bot])
-    majority_count = (int)(true_member_count - 1 / 2) + 1
-    if msg.author.bot:
-        #Check for the votekick hashtag
-        if msg.content.startswith('#VoteKick:'):
-            if reaction.emoji == '✅':
-                if reaction.count>=majority_count:
-                    rmsg=msg.reference.resolved
-                    kick(ctx, target=user)
-                    newemb=discord.Embed(title=f"The Council has spoken!", description=f"User: {user.name} has been kicked from the server!")
-                    await msg.channel.send(embed=newemb)
-                    await rmsg.delete()
-        elif msg.content.startswith('#VoteSkip:'):
-            if reaction.emoji == '✅':
-                if reaction.count>=majority_count:
-                    rmsg=msg.reference.resolved
-                    newemb=discord.Embed(title=f"The Council has spoken!", description=f"Media skipped!")
-                    skip(ctx)
-                    await msg.channel.send(embed=newemb)
-                    await rmsg.delete()
-
+async def on_reaction_add(reaction, user):
+    try:
+        msg=reaction.message.embeds[0].title
+        guild = reaction.message.channel.guild
+        true_member_count = len([m for m in guild.members if not m.bot])
+        vc_member_count = len([m for m in voice_channels[guild.id].members if not m.bot])
+        majority_count = (int)(true_member_count - 1 / 2) + 2
+        majority_vc = (int)(vc_member_count - 1 / 2) + 2
+        if reaction.message.author.bot:
+            #Check for the votekick hashtag
+            if msg.startswith('#VoteKick:'):
+                if reaction.emoji == '✅':
+                    if reaction.count>=majority_count:
+                        kick(target=user)
+                        newemb=discord.Embed(title=f"The Council has spoken!", description=f"User: {user.name} has been kicked from the server!")
+                        await reaction.message.channel.send(embed=newemb)
+                        await reaction.message.delete()
+            elif msg.startswith('#VoteSkip:'):
+                if reaction.emoji == '✅':
+                    print('vote added to skip')
+                    if reaction.count>=majority_vc:
+                        newemb=discord.Embed(title=f"The Council has spoken!", description=f"Media skipped!")
+                        guild_id = guild.id
+                        voice = discord.utils.get(bot.voice_clients, guild=guild)
+                        voice.stop()
+                        await reaction.message.channel.send(embed=newemb)
+                        if(len(queues[guild_id]) > 0):
+                            newemb2=discord.Embed(title=f"#NowPlaying: Video {queues[guild_id][0][1]}.\n{queues[guild_id][0][0]}")
+                            await reaction.message.channel.send(newemb2)
+                            
+                        await reaction.message.delete()
+    except Exception as e:
+        print(e)
+  
+#This function tells the bot to join the caller's voice channel
 @bot.command(name="join")
 async def join(ctx):
-    if(ctx.author.voice):
-        channel=ctx.message.author.voice.channel
-        await channel.connect()
-    else:
-        await ctx.send("Please join a voice channel to invoke this command. Thank you!")
+    try:
+        if(ctx.author.voice):
+            channel=ctx.message.author.voice.channel
+            voice_channels[ctx.guild.id] = channel
+            await channel.connect()
+        else:
+            await ctx.send("Please join a voice channel to invoke this command. Thank you!")
+    except Exception as e:
+        print(e)
+        await ctx.send(f"Error: {e}")
+
 
 #Leave Voice Channel
 @bot.command(pass_context=True)
 async def leave(ctx):
-    if(ctx.voice_client):
-        await ctx.guild.voice_client.disconnect()
-        await ctx.send("Leaving the voice channel...")
-    else:
-        await ctx.send("Bot is currently not in a voice channel!")
-
+    try:
+        if(ctx.voice_client):
+            await ctx.guild.voice_client.disconnect()
+            await ctx.send("Leaving the voice channel...")
+            voice_channels[ctx.guild.id] = None
+        else:
+            await ctx.send("Bot is currently not in a voice channel!")
+    except Exception as e:
+        print(e)
+        await ctx.send(f"Error: {e}")
+ 
+#Play audio from a YouTube URL
 @bot.command(pass_context=True, name='play', help='Play audio from a given YouTube URL')
 async def play(ctx, *args):
-    if(ctx.voice_client==None):
-        await join(ctx)
+    try:
+        if(ctx.voice_client==None):
+            await join(ctx)
 
-    YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist':'True'}
-    FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
-    voice = ctx.guild.voice_client
-    video_url = get_video(ctx, *args)
+        YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist':'True'}
+        FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
+        voice = ctx.guild.voice_client
+        video_url = get_video(ctx, *args)
 
-    if not voice.is_playing():
-        with YoutubeDL(YDL_OPTIONS) as ydl:
-            info = ydl.extract_info(video_url, download=False)
-        formatted_URL = info['formats'][0]['url']
+        if not voice.is_playing():
+            with YoutubeDL(YDL_OPTIONS) as ydl:
+                info = ydl.extract_info(video_url, download=False)
+            formatted_URL = info['formats'][0]['url']
+
+            # getting the request from url
+            r = requests.get(video_url)
+            # converting the text
+            s = BeautifulSoup(r.text, "html.parser")
+            # finding meta info for title
+            title = s.find("meta", itemprop="name")["content"]
+            await ctx.send(f"#NowPlaying: Video {title}")
+            print(f'Playing video: {title}')
+            voice.play(FFmpegPCMAudio(formatted_URL, **FFMPEG_OPTIONS), after=lambda x=None: check_queue(ctx, ctx.message.guild.id))
+            voice.is_playing()
+        else:
+            await queue(ctx, video_url)
+            return
+    except Exception as e:
+        print(e)
+        await ctx.send(f"Error: {e}")
+ 
+#Pause audio
+@bot.command(pass_context=True)
+async def pause(ctx):
+    try:
+        voice = discord.utils.get(bot.voice_clients, guild=ctx.guild)
+        if voice.is_playing():
+            voice.pause()
+    except Exception as e:
+        print(e)
+        await ctx.send(f"Error: {e}")
+ 
+#Resume audio
+@bot.command(pass_context=True)
+async def resume(ctx):
+    try:
+        voice = discord.utils.get(bot.voice_clients, guild=ctx.guild)
+        if voice.is_paused():
+            voice.resume()
+    except Exception as e:
+        print(e)
+        await ctx.send(f"Error: {e}")
+    
+#Stop audio
+@bot.command(pass_context=True)
+async def stop(ctx):
+    try:
+        if ctx.message.author == bot.user or ctx.message.author.guild_permissions.administrator:
+            await ctx.send(f"Media has been stopped.")
+            voice = discord.utils.get(bot.voice_clients, guild=ctx.guild)
+            voice.stop()
+        else:
+            await ctx.send(f"Sorry, {ctx.message.author}, but you don't have permissions to call that function!")
+    except Exception as e:
+        print(e)
+        await ctx.send(f"Error: {e}")
+
+#Queue up media
+@bot.command(pass_context=True, help="Queue a video/audio to be played!")
+async def queue(ctx, url):
+    try:
+        if(ctx.voice_client==None):
+            await join(ctx)
+
+        video_url = get_video(ctx, url)
+
+        voice = ctx.guild.voice_client
+        guild_id = ctx.message.guild.id
 
         # getting the request from url
         r = requests.get(video_url)
@@ -207,86 +333,50 @@ async def play(ctx, *args):
         s = BeautifulSoup(r.text, "html.parser")
         # finding meta info for title
         title = s.find("meta", itemprop="name")["content"]
-        await ctx.send(f"#NowPlaying: Video {title}.\n{video_url}")
 
-        voice.play(FFmpegPCMAudio(formatted_URL, **FFMPEG_OPTIONS), after=lambda x=None: check_queue(ctx, ctx.message.guild.id))
-        voice.is_playing()
-    else:
-        await queue(ctx, video_url)
-        return
+        if guild_id in queues:
+            queues[guild_id].append(tuple((video_url, title)))
+        else:
+            queues[guild_id] = [tuple((video_url, title))]
+        
+        await ctx.send(f"#Queue: Video {title} added to position {len(queues[guild_id])} in queue.\n{url}\n Current queue:")
+        i=0
+        for x in queues[guild_id]:
+            await ctx.send(f"\t{i+1}: {x[1]}")
+            i=i+1
+    except Exception as e:
+        print(e)
+        await ctx.send(f"Error: {e}")
 
-@bot.command(pass_context=True)
-async def pause(ctx):
-    voice = discord.utils.get(bot.voice_clients, guild=ctx.guild)
-    if voice.is_playing():
-        voice.pause()
-
-@bot.command(pass_context=True)
-async def resume(ctx):
-    voice = discord.utils.get(bot.voice_clients, guild=ctx.guild)
-    if voice.is_paused():
-        voice.resume()
-
-@bot.command(pass_context=True)
-async def stop(ctx):
-    if ctx.message.author == bot.user or ctx.message.author.guild_permissions.administrator:
-        await ctx.send(f"#VideoStopped")
-        voice = discord.utils.get(bot.voice_clients, guild=ctx.guild)
-        voice.stop()
-    else:
-        await ctx.send(f"Sorry, {ctx.message.author}, but you don't have permissions to call that function!")
-    
-
-
-@bot.command(pass_context=True, help="Queue a video/audio to be played!")
-async def queue(ctx, url):
-    if(ctx.voice_client==None):
-        await join(ctx)
-
-    video_url = get_video(ctx, url)
-
-    voice = ctx.guild.voice_client
-    guild_id = ctx.message.guild.id
-
-    # getting the request from url
-    r = requests.get(video_url)
-    # converting the text
-    s = BeautifulSoup(r.text, "html.parser")
-    # finding meta info for title
-    title = s.find("meta", itemprop="name")["content"]
-
-    if guild_id in queues:
-        queues[guild_id].append(tuple((video_url, title)))
-    else:
-        queues[guild_id] = [tuple((video_url, title))]
-    
-    await ctx.send(f"#Queue: Video {title} added to position {len(queues[guild_id])} in queue.\n{url}\n Current queue:")
-    i=0
-    for x in queues[guild_id]:
-        await ctx.send(f"\t{i+1}: {x[1]}")
-        i=i+1
-
-
+#Skip media
 @bot.command(pass_context=True)
 async def skip(ctx):
-    if ctx.message.author == bot.user or ctx.message.author.guild_permissions.administrator:
-        guild_id = ctx.message.guild.id
-        await ctx.send(f"#VideoSkipped")
-        voice = discord.utils.get(bot.voice_clients, guild=ctx.guild)
-        voice.stop()
-        if(len(queues[guild_id]) > 0):
-            await ctx.send(f"#NowPlaying: Video {queues[guild_id][0][1]}.\n{queues[guild_id][0][0]}")
-    else:
-        await ctx.send(f"Sorry, {ctx.message.author}, but you don't have permissions to call that function!")
+    try:
+        if ctx.message.author == bot.user or ctx.message.author.guild_permissions.administrator:
+            guild_id = ctx.message.guild.id
+            voice = discord.utils.get(bot.voice_clients, guild=ctx.guild)
+            voice.stop()
+            if(len(queues[guild_id]) > 0):
+                await ctx.send(f"Now playing: Video {queues[guild_id][0][1]}.\n{queues[guild_id][0][0]}")
+        else:
+            await ctx.send(f"Sorry, {ctx.message.author}, but you don't have permissions to call that function!")
 
+    except Exception as e:
+        print(e)
+        await ctx.send(f"Error: {e}")
+
+#Vote to skip currently playing media
 @bot.command(pass_context=True)
 async def voteskip(ctx):
-    true_member_count = len([m for m in ctx.guild.members if not m.bot])
-    embed=discord.Embed(title=f"#VoteSkip: Voting to skip current media.", description="React to this message with ✅ for Yes, ❌ for No.",  color=0xd10a07)
-    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url) 
-    message = await ctx.channel.send(embed=embed)
-    await message.add_reaction("✅")
-    await message.add_reaction("❌")
-
+    try:
+        true_member_count = len([m for m in ctx.guild.members if not m.bot])
+        embed=discord.Embed(title=f"#VoteSkip: Voting to skip current media.", description="React to this message with ✅ for Yes, ❌ for No.",  color=0xd10a07)
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url) 
+        message = await ctx.channel.send(embed=embed)
+        await message.add_reaction("✅")
+        await message.add_reaction("❌")
+    except Exception as e:
+        print(e)
+        await ctx.send(f"Error: {e}")
 
 bot.run(TOKEN)
