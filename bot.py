@@ -13,6 +13,7 @@ import youtube_dl
 from django.core.validators import URLValidator
 from bs4 import BeautifulSoup
 import urllib.request
+import re
 from dotenv import load_dotenv
 from discord.ext import commands
 from discord.ext.commands import has_permissions, CheckFailure, BadArgument
