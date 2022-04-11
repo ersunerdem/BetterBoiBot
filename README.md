@@ -18,13 +18,21 @@ Commands are called by typing the prefix '3b!' and then a command name. Below is
 a list of commands:
 
 play <url or search term>: BetterBoiBot will play either the audio of a youtube video at the link provided, or the first search from youtube for that search term.
+
 poll <msg, desc, opt>: Create a poll with header <msg>, paragraph description <desc>, and number of options <opt> (2-5).
+
 poll_yesno <msg>: Create a poll with header <msg> and description "React to this message with ✅ for Yes, ❌ for No."
+
 votekick <user>: Vote to kick a user democratically. *TESTING*
+
 kick <user>: Forcefully kick a user if you have the privileges. *TESTING*
+
 queue <url>: Enter audio from youtube into a queue
+
 skip: Skip the currently playing audio.
+
 stop: Stop playing all media.
+
 voteskip: Elect to skip current media democratically.
 
 ## Credits:
