@@ -358,7 +358,8 @@ async def skip(ctx):
             voice = discord.utils.get(bot.voice_clients, guild=ctx.guild)
             voice.stop()
             if(len(queues[guild_id]) > 0):
-                await ctx.send(f"Now playing: Video {queues[guild_id][0][1]}.\n{queues[guild_id][0][0]}")
+                # await ctx.send(f"Now playing: Video {queues[guild_id][0][1]}.\n{queues[guild_id][0][0]}")
+                ctx.play(queues[guild_id[0][0]]
         else:
             await ctx.send(f"Sorry, {ctx.message.author}, but you don't have permissions to call that function!")
 
