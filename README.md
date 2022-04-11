@@ -17,24 +17,36 @@ https://discord.com/api/oauth2/authorize?client_id=923347751754944532&permission
 Commands are called by typing the prefix '3b!' and then a command name. Below is
 a list of commands:
 
-play <url or search term>: BetterBoiBot will play either the audio of a youtube video at the link provided, or the first search from youtube for that search term.
+* play <url or search term>: BetterBoiBot will play either the audio of a youtube video at the link provided, or the first search from youtube for that search term.
 
-poll <msg, desc, opt>: Create a poll with header <msg>, paragraph description <desc>, and number of options <opt> (2-5).
+* poll <msg, desc, opt>: Create a poll with header <msg>, paragraph description <desc>, and number of options <opt> (2-5).
 
-poll_yesno <msg>: Create a poll with header <msg> and description "React to this message with ✅ for Yes, ❌ for No."
+* poll_yesno <msg>: Create a poll with header <msg> and description "React to this message with ✅ for Yes, ❌ for No."
 
-votekick <user>: Vote to kick a user democratically. *TESTING*
+* votekick <user>: Vote to kick a user democratically. *TESTING*
 
-kick <user>: Forcefully kick a user if you have the privileges. *TESTING*
+* kick <user>: Forcefully kick a user if you have the privileges. *TESTING*
 
-queue <url>: Enter audio from youtube into a queue
+* queue <url>: Enter audio from youtube into a queue
 
-skip: Skip the currently playing audio.
+* skip: Skip the currently playing audio.
 
-stop: Stop playing all media.
+* stop: Stop playing all media.
 
-voteskip: Elect to skip current media democratically.
+* voteskip: Elect to skip current media democratically.
 
+## Future Plans:
+ 
+Functionality I aim to include in the near future:
+ 
+* change_prefix <str>: Change the prefix string on this server, so BBB listens to a prefix of your choice.
+
+* add_channel, remove_channel: Channel editing features
+ 
+* Controls for moderation with server-specific banned terms
+  * Sends message to new server users with server rules
+  * Sends message to all users when server rules change
+  
 ## Credits:
 discord.py: https://github.com/Rapptz/discord.py
 
