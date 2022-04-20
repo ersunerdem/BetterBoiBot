@@ -354,15 +354,12 @@ async def queue(ctx, url):
 async def skip(ctx):
     try:
         if ctx.message.author == bot.user or ctx.message.author.guild_permissions.administrator:
-            guild_id = ctx.message.guild.id
+            #guild_id = ctx.message.guild.id
             voice = discord.utils.get(bot.voice_clients, guild=ctx.guild)
             voice.stop()
-            if(len(queues[guild_id]) > 0):
-                # await ctx.send(f"Now playing: Video {queues[guild_id][0][1]}.\n{queues[guild_id][0][0]}")
-                ctx.play(queues[guild_id[0][0]]
+            check_queue(ctx, ctx.message.guild.id)
         else:
             await ctx.send(f"Sorry, {ctx.message.author}, but you don't have permissions to call that function!")
-
     except Exception as e:
         print(e)
         await ctx.send(f"Error: {e}")
