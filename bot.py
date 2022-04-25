@@ -43,9 +43,10 @@ def concat(*args):
 def check_queue(ctx, id):
     try:
         if(queues[id] == None):
-            pass
+            return False
         elif len(queues[id]) > 0:
             try:
+                '''
                 voice = ctx.guild.voice_client
                 url = queues[id].pop(0)[0]
                 YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist':'True'}
@@ -55,6 +56,11 @@ def check_queue(ctx, id):
                     formatted_URL = info['formats'][0]['url']
                     voice.play(discord.FFmpegPCMAudio(formatted_URL, **FFMPEG_OPTIONS))
                     voice.is_playing()
+                '''
+                voice = ctx.guild.voice_client
+                if(voice.is_playing()):
+                    voice.stop()
+                return True
             except:
                 print('Error on check_queue()')
     except Exception as e:
@@ -71,6 +77,9 @@ def is_valid_url(ctx, msg):
 def get_video(ctx, *args):
     url = concat(*args)
     if is_valid_url(ctx, url):
+        #Ignore shorts section of url
+        url = url.replace('/shorts/', '/watch?v=')
+        print(f'Playing url: {url}')
         return url
     else:
         new_url = f"https://www.youtube.com/results?search_query={url}"
@@ -325,7 +334,6 @@ async def queue(ctx, url):
 
         video_url = get_video(ctx, url)
 
-        voice = ctx.guild.voice_client
         guild_id = ctx.message.guild.id
 
         # getting the request from url
@@ -340,7 +348,7 @@ async def queue(ctx, url):
         else:
             queues[guild_id] = [tuple((video_url, title))]
         
-        await ctx.send(f"#Queue: Video {title} added to position {len(queues[guild_id])} in queue.\n{url}\n Current queue:")
+        await ctx.send(f"#Queue: Video {title} added to position {len(queues[guild_id])} in queue.\n Current queue:")
         i=0
         for x in queues[guild_id]:
             await ctx.send(f"\t{i+1}: {x[1]}")
@@ -354,10 +362,12 @@ async def queue(ctx, url):
 async def skip(ctx):
     try:
         if ctx.message.author == bot.user or ctx.message.author.guild_permissions.administrator:
-            #guild_id = ctx.message.guild.id
+            id = ctx.message.guild.id
             voice = discord.utils.get(bot.voice_clients, guild=ctx.guild)
             voice.stop()
-            check_queue(ctx, ctx.message.guild.id)
+            if(check_queue(ctx, ctx.message.guild.id)):
+                next_video = queues[id].pop(0)[0]
+                await play(ctx, next_video)
         else:
             await ctx.send(f"Sorry, {ctx.message.author}, but you don't have permissions to call that function!")
     except Exception as e:
