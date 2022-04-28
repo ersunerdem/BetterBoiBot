@@ -8,8 +8,8 @@
 #=================================================
 import requests
 import os
+import json
 import discord
-import youtube_dl
 from django.core.validators import URLValidator
 from bs4 import BeautifulSoup
 import urllib.request
@@ -19,7 +19,11 @@ from discord.ext import commands
 from discord.ext.commands import has_permissions, CheckFailure, BadArgument
 from discord.utils import get
 from discord import FFmpegPCMAudio
+import yt_dlp
 from youtube_dl import YoutubeDL
+
+#adding a comment and unused var for git pushing...this is what it's come to.
+useless = None
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -46,17 +50,6 @@ def check_queue(ctx, id):
             return False
         elif len(queues[id]) > 0:
             try:
-                '''
-                voice = ctx.guild.voice_client
-                url = queues[id].pop(0)[0]
-                YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist':'True'}
-                FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
-                with YoutubeDL(YDL_OPTIONS) as ydl:
-                    info = ydl.extract_info(url, download=False)
-                    formatted_URL = info['formats'][0]['url']
-                    voice.play(discord.FFmpegPCMAudio(formatted_URL, **FFMPEG_OPTIONS))
-                    voice.is_playing()
-                '''
                 voice = ctx.guild.voice_client
                 if(voice.is_playing()):
                     voice.stop()
@@ -74,8 +67,7 @@ def is_valid_url(ctx, msg):
         return False
     return True
 
-def get_video(ctx, *args):
-    url = concat(*args)
+def get_video(ctx, url):
     if is_valid_url(ctx, url):
         #Ignore shorts section of url
         url = url.replace('/shorts/', '/watch?v=')
@@ -262,16 +254,46 @@ async def play(ctx, *args):
         if(ctx.voice_client==None):
             await join(ctx)
 
-        YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist':'True'}
+        #Option 'noplaylist' set to true, because if the url contains 'playlist' we will deal with it as a list of url's...
+        YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist':'True', 'cookies':f'{os.path.dirname(os.path.abspath(__file__))}/cookies.txt'}
         FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
         voice = ctx.guild.voice_client
-        video_url = get_video(ctx, *args)
+        url = concat(*args)
+        #BROKEN FOR NOW: Playlist
+        '''
+        if(url.__contains__("https://www.youtube.com/playlist?")):
+            #First, get all videos in playlist
+            with YoutubeDL({'outtmpl': '%(id)s%(ext)s', 'quiet':False,}) as ydl:
+                await ctx.send(f"Trying to add from playlist at {url}! This may take some time...")
+                result = ydl.extract_info(url, download=False) #We just want to extract the info
 
+                if 'entries' in result:
+                    # Can be a playlist or a list of videos
+                    videos = result['entries']
+                    #loops entries to grab each video_url
+                    for i, item in enumerate(videos):
+                        video = result['entries'][i]['webpage_url']
+                        print(f"Trying to add from url {video}")
+                        # getting the request from url
+                        r = requests.get(video)
+                        # converting the text
+                        s = BeautifulSoup(r.text, "html.parser")
+                        # finding meta info for title
+                        title = s.find("meta", itemprop="name")["content"]
+                        guild_id = ctx.guild.id
+                        if guild_id in queues:
+                            queues[guild_id].append(tuple((video, title)))
+                        else:
+                            queues[guild_id] = [tuple((video, title))]
+                        
+                    await ctx.send(f"Playlist Queued! New queue length: {len(queues[guild_id])} videos in queue.\n")
+        '''
+
+        video_url = get_video(ctx, url)
         if not voice.is_playing():
-            with YoutubeDL(YDL_OPTIONS) as ydl:
-                info = ydl.extract_info(video_url, download=False)
-            formatted_URL = info['formats'][0]['url']
-
+            with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
+                info = ydl.sanitize_info(ydl.extract_info(video_url, download=False))
+            formatted_URL = info['formats'][5]['url']
             # getting the request from url
             r = requests.get(video_url)
             # converting the text
@@ -284,7 +306,9 @@ async def play(ctx, *args):
             voice.is_playing()
         else:
             await queue(ctx, video_url)
-            return
+            return    
+
+        
     except Exception as e:
         print(e)
         await ctx.send(f"Error: {e}")
@@ -349,10 +373,18 @@ async def queue(ctx, url):
             queues[guild_id] = [tuple((video_url, title))]
         
         await ctx.send(f"#Queue: Video {title} added to position {len(queues[guild_id])} in queue.\n Current queue:")
+    except Exception as e:
+        print(e)
+        await ctx.send(f"Error: {e}")
+
+@bot.command(pass_context=True, help="Show the queue through Discord messages.")
+async def show_queue(ctx):
+    try:
         i=0
-        for x in queues[guild_id]:
-            await ctx.send(f"\t{i+1}: {x[1]}")
+        for x in queues[ctx.guild.id]:
+            msg = (f"\t{i+1}: {x[1]}")
             i=i+1
+            await ctx.send(msg)
     except Exception as e:
         print(e)
         await ctx.send(f"Error: {e}")
@@ -360,6 +392,23 @@ async def queue(ctx, url):
 #Skip media
 @bot.command(pass_context=True)
 async def skip(ctx):
+    try:
+        if ctx.message.author == bot.user or ctx.message.author.guild_permissions.administrator:
+            id = ctx.message.guild.id
+            voice = discord.utils.get(bot.voice_clients, guild=ctx.guild)
+            voice.stop()
+            if(check_queue(ctx, ctx.message.guild.id)):
+                next_video = queues[id].pop(0)[0]
+                await play(ctx, next_video)
+        else:
+            await ctx.send(f"Sorry, {ctx.message.author}, but you don't have permissions to call that function!")
+    except Exception as e:
+        print(e)
+        await ctx.send(f"Error: {e}")
+
+#Skip ALL media
+@bot.command(pass_context=True)
+async def skipall(ctx):
     try:
         if ctx.message.author == bot.user or ctx.message.author.guild_permissions.administrator:
             id = ctx.message.guild.id

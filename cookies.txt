@@ -1,0 +1,12 @@
+# Netscape HTTP Cookie File
+
+
+.youtube.com	TRUE	/	TRUE	0	CONSENT	YES+US.en+20170507-09-0
+.youtube.com	TRUE	/	TRUE	0	PREF	f6=80001&cvdm=grid&tz=America.Los_Angeles&al=en&f1=50000000&f3=8&f5=30030
+.youtube.com	TRUE	/	TRUE	0	SID	JQj1ISnsXrPdTc_XJJmMAI0dQo-Emppx5mujUXossqPZpq2FgX4gEUqdljPsfPu6y8QqMQ.
+.youtube.com	TRUE	/	TRUE	0	APISID	yNHTMLvIY-b6-uC9/Aa8w5wdxaU9ktvXo8
+.youtube.com	TRUE	/	TRUE	0	SAPISID	H4VMkrSzaE6qM3Tw/AOB9hra5ZSiCwWXVo
+.youtube.com	TRUE	/	TRUE	0	__Secure-1PAPISID	H4VMkrSzaE6qM3Tw/AOB9hra5ZSiCwWXVo
+.youtube.com	TRUE	/	TRUE	0	__Secure-3PAPISID	H4VMkrSzaE6qM3Tw/AOB9hra5ZSiCwWXVo
+.youtube.com	TRUE	/	TRUE	0	wide	1
+.youtube.com	TRUE	/	TRUE	0	SIDCC	AJi4QfHoa8uA-uprKp_rzH15nHqXPqMHPz-B-R329qCON0oeTXhobYqt8WowYsPV6S0hcwO6bqzd
